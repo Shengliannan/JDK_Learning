@@ -1,5 +1,22 @@
 # JDK_Learning
+[TOC]
+
 JDK源码学习
+
+## Java Object 方法有哪些
+
+- registerNavtives():void
+- getClass():Class<?>
+- hashCode():int
+- equals(Object):boolean
+- clone():Object
+- toString():String
+- notify():void
+- notifyAll():void
+- wait(long):void
+- wait(long,int):void
+- wait():void
+- finalize():void
 
 ## Java 比较地址
 
@@ -32,15 +49,96 @@ BigInteger、BigDecimal、String、Integer、Long、Short、Byte、Character、B
 >
 > [BigInteger不可变类讲解](https://www.jb51.net/article/37889.htm)
 
+
+
 ## 集合
 
-### Deque
+Java的集合类主要由两个接口派生而出：Collection和Map。
+
+Java集合框架的4个主要体系：set、list、Queue、Map
+
+Java8对集合改进：Lambda表达式简化集合编程、集合的Stream编程。
+
+[参考](https://wenku.baidu.com/view/29a7ebdd4793daef5ef7ba0d4a7302768e996f6a.html)
+
+
+
+![Java集合框架图](https://raw.githubusercontent.com/Shengliannan/JDK_Learning/master/img/Java%E9%9B%86%E5%90%88%E6%A1%86%E6%9E%B6%E5%9B%BE.jpg)
+
+***注：***
+
+1. 继承类：实线+空心箭头
+2. 实线接口：虚线+空心箭头
+3. 关联：实线+实心箭头
+4. 依赖：虚线+实心箭头
+
+
+### Collection
+
+![Collection](https://github.com/Shengliannan/JDK_Learning/blob/master/img/collection.png?raw=true)
+#### ArrayList
+
+```java
+// 默认初始容量为10
+private static final int DEFAULT_CAPACITY = 10;
+
+private void grow(int minCapacity)
+{
+    int oldCapacity = elementData.length;
+    //注意此处扩充capacity的方式是将其向右一位再加上原来的数，实际上是扩充了1.5倍
+    int newCapacity = oldCapacity + (oldCapacity >> 1);
+    if (newCapacity - minCapacity < 0)
+        newCapacity = minCapacity;
+    if (newCapacity - MAX_ARRAY_SIZE > 0)
+        newCapacity = hugeCapacity(minCapacity);
+    elementData = Arrays.copyOf(elementData, newCapacity);
+}
+
+//如果想ArrayList中添加大量元素，可使用ensureCapacity方法一次性增加capacity，可以减少增加重分配的次数提高性能。
+//eg:自动扩容和使用ensureCapacity方法比较，后者效率明显提高。
+public class EnsureCapacityTest {
+    public static void main(String[] args) {
+        ArrayList<Object> list = new ArrayList<Object>();
+        final int N =10000000;
+        long startTime = System.currentTimeMillis();
+        for(int i = 0;i<N;i++) {
+            list.add(i);
+        }
+        long endTime = System.currentTimeMillis();
+        System.out.println(endTime-startTime);
+
+        list = new ArrayList<Object>();
+        long startTime1 = System.currentTimeMillis();
+        list.ensureCapacity(N);
+        for(int i = 0;i<N;i++) {
+            list.add(i);
+        }
+        long endTime1 = System.currentTimeMillis();
+        System.out.println(endTime1-startTime1);
+    }
+}
+
+output：
+3946
+1345
+
+原文：https://blog.csdn.net/zzzzzz1238/article/details/78480104 
+
+```
+
+
+
+
+
+
+
+#### Deque
 
 全称：double ended queue
 
 ***
 
-### LinkedList
+#### LinkedList
 
 LinkedList实现了Deque接口，Deque继承了Queue接口。
 
@@ -48,7 +146,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 
 
-#### 检索
+##### 检索
 
 - peek() 
 
@@ -58,7 +156,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 检索，返回第一个元素，不删除，链表为空，抛出异常，NoSuchElementException
 
-#### 插入
+##### 插入
 
 - add()
 
@@ -68,7 +166,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 插入到尾部，插入成功，返回true，没有异常。
 
-#### 删除
+##### 删除
 
 - poll()
 
@@ -84,9 +182,11 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 
 
+### Map
 
+![Map](https://github.com/Shengliannan/JDK_Learning/blob/master/img/map.png?raw=true)
 
-## HashMap
+#### HashMap
 
 HashMap简介
 
@@ -260,7 +360,7 @@ resize
 
 
 
-### equals()相同，hashcod()必相同；hashcode()相同，equals()不一定相同
+#### equals()相同，hashcod()必相同；hashcode()相同，equals()不一定相同
 
 ```java
 System.out.println("Ma".hashCode()=="NB".hashCode());  //输出true
@@ -295,7 +395,7 @@ hashcode，equals相等
 p = tab[i = (n - 1) & hash]) == null
 ```
 
-### Integer 
+#### Integer 
 
 ```
 public static Integer valueOf(int i) {
@@ -354,9 +454,11 @@ IntegerCache
 
 **红黑树的时间复杂度为: O(lgn)**
 
+*红黑树的*操作时间跟二叉查找*树的时间复杂度*是一样的,执行查找、插入、删除等操作的时间复杂度为O(logn)。
 
 
-#### 树专题
+
+## 树专题
 
 二分查找和二叉查找树的区别：
 
