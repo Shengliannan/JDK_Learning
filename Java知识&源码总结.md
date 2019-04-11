@@ -26,7 +26,32 @@ JDK源码学习
 
 ## 深拷贝和浅拷贝
 
+## Java的引用类型
+### Integer
+```Java
+//输出 true true false
+//Java 的Integer类中有一个静态内部类IntegerCache，会实例化-128~127的实例对象，当从使用-128~127的常量时，会从缓存池中取出，不会新创建对象。
+public class IntegerTest {
+    public static void main(String[] args) {
+        Integer i1 = 1;
+        Integer i2 = 1;
+        System.out.println(i1==i2);
+        Integer i3 = 127;
+        Integer i4 = 127;
+        System.out.println(i3==i4);
+        Integer i5 = 128;
+        Integer i6 = 128;
+        System.out.println(i5==i6);
+    }
+}
 
+
+public static Integer valueOf(int i) {
+        if (i >= IntegerCache.low && i <= IntegerCache.high)
+            return IntegerCache.cache[i + (-IntegerCache.low)];
+        return new Integer(i);
+    }
+```
 
 ## Java中的不可变类
 
@@ -80,7 +105,8 @@ Java8对集合改进：Lambda表达式简化集合编程、集合的Stream编程
 ### Collection
 
 ![Collection](https://github.com/Shengliannan/JDK_Learning/blob/master/img/collection.png?raw=true)
-#### ArrayList
+#### List
+##### ArrayList
 
 ```java
 // 默认初始容量为10
@@ -130,19 +156,41 @@ output：
 
 ```
 
+##### 数组和ArrayList的互转
+
+1）数组转ArrayList
+
+```Java
+//arrayList.get(0) 是一个一维数组，size=1
+ArrayList<Integer> arrayList = new ArrayList(Arrays.asList(array));
+
+// 下面这种是错误的，原因待查
+ArrayList<Integer> arrayList = new ArrayList<Integer>(Arrays.asList(array));
+```
+
+2）ArrayList转数组
+
+```
+
+```
 
 
 
 
 
+##### LinkedList
 
-#### Deque
+
+
+
+#### Queue
+##### Deque
 
 全称：double ended queue
 
 ***
 
-#### LinkedList
+##### LinkedList
 
 LinkedList实现了Deque接口，Deque继承了Queue接口。
 
@@ -150,7 +198,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 
 
-##### 检索
+###### 检索
 
 - peek() 
 
@@ -160,7 +208,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 检索，返回第一个元素，不删除，链表为空，抛出异常，NoSuchElementException
 
-##### 插入
+###### 插入
 
 - add()
 
@@ -170,7 +218,7 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 
 插入到尾部，插入成功，返回true，没有异常。
 
-##### 删除
+###### 删除
 
 - poll()
 
@@ -183,6 +231,56 @@ LinkedList实现了Deque接口，Deque继承了Queue接口。
 - remove()
 
 删除元素，返回第一个元素，链表为空，抛出异常：java.util.NoSuchElementException
+
+
+
+##### PriorityQueue
+
+1. 默认是一个小顶堆
+2. PriorityQueue是非线程安全的，所以Java提供了PriorityBlockingQueue（实现[BlockingQueue接口](http://www.journaldev.com/1034/java-blockingqueue-example-implementing-producer-consumer-problem)）用于[Java多线程环境](http://www.journaldev.com/1079/java-thread-tutorial)。 
+3. 大顶堆的PriorityQueue实现
+
+```java
+//构造函数中重写比较器
+PriorityQueue<Integer> priorityQueue = new PriorityQueue<Integer>(new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return o2-o1;
+            }
+        });
+```
+
+4. PriorityQueue的问题
+
+   > [PriorityQueue的问题](https://blog.csdn.net/cyp331203/article/details/25310733 )
+
+```Java
+import java.util.Iterator;
+import java.util.PriorityQueue;
+// 期望输出2,4,6,7，实际输出2,6,4,7，PriorityQueue只保证堆的性质，如果想要保证输出的顺序，需要依次poll()
+public class PriorityQueueTest {
+    public static void main(String[] args) {
+        PriorityQueue<Integer> priorityQueue = new PriorityQueue<>();
+        priorityQueue.add(6);
+        priorityQueue.add(4);
+        priorityQueue.add(2);
+        priorityQueue.add(7);
+        Iterator iterator = priorityQueue.iterator();
+        while(iterator.hasNext()){
+            System.out.print(iterator.next()+" ");
+        }
+        //这里取出size()大小，因为每一次poll()之后size大小都会变化，所以不能作为for循环的判断条件
+        int len = priorityQueue.size();
+		for(int i=0;i<len;i++){
+			System.out.print(priorityQueue.poll()+" "); //每次执行poll()都会重写调整，满足堆定义
+		}
+    }
+}
+```
+
+
+
+***
 
 
 
@@ -499,4 +597,239 @@ String与StringBuilder不同（读源码）
 二分查找
 
 归并排序
+
+
+
+
+
+### 多线程
+
+#### ThreadLocal
+
+> [码农翻身](https://mp.weixin.qq.com/s/aM03vvSpDpvwOdaJ8u3Zgw )
+>
+> [正确理解ThreadLocal](https://www.iteye.com/topic/103804 )
+>
+> [ThreadLocalMap里的弱引用](https://blog.csdn.net/vicoqi/article/details/79743112 )
+
+为什么要维护本地线程变量？
+
+
+**ThreadLocal是用来维护本线程的变量的，并不能解决共享变量的并发问题。**
+
+ThreadLocalMap是ThreadLocal的静态内部类
+
+Thread类中持有ThreadLocal.ThreadLocalMap的引用
+
+每个Thread类会持有自己的ThreadLocalMap引用。不同Thread的ThreadLocalMap实例不相同
+
+实际上ThreadLocal中并没有存放任何的对象或引用，在上面的的代码中ThreadLocal的实例threadSession只相当于一个标记的作用。而存放对象的真正位置是正在运行的Thread线程对象，每个Thread对象中都存放着一个ThreadLocalMap类型threadLocals对象，这是一个映射表map，这个map的键是一个ThreadLocal对象，值就是我们想存的局部对象。 
+
+ThreadLocal set(T value) -> ThreadLocalMap set(ThreadLocal<?> key, Object value)
+
+ThreadLocalMap和HashMap的区别？
+
+```Java
+//HashMap
+transient Node<K,V>[] table;
+//node是一个链表节点
+-----------------------------
+| hash | key | vlaue | next |
+-----------------------------
+static class Node<K,V> implements Map.Entry<K,V> {
+        final int hash;
+        final K key;
+        V value;
+        Node<K,V> next;
+
+        Node(int hash, K key, V value, Node<K,V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
+
+        public final K getKey()        { return key; }
+        public final V getValue()      { return value; }
+        public final String toString() { return key + "=" + value; }
+
+        public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
+
+        public final V setValue(V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
+
+        public final boolean equals(Object o) {
+            if (o == this)
+                return true;
+            if (o instanceof Map.Entry) {
+                Map.Entry<?,?> e = (Map.Entry<?,?>)o;
+                if (Objects.equals(key, e.getKey()) &&
+                    Objects.equals(value, e.getValue()))
+                    return true;
+            }
+            return false;
+        }
+    }
+
+
+//ThreadLocalMap
+private Entry[] table;
+//Entry是一个键值对
+-------------------------
+| ThradLocal类型引用 | v |
+-------------------------
+static class Entry extends WeakReference<ThreadLocal<?>> {
+            /** The value associated with this ThreadLocal. */
+            Object value;
+
+            Entry(ThreadLocal<?> k, Object v) {
+                super(k);
+                value = v;
+            }
+        }
+
+/**
+* 在寻址冲突时，ThreadLocalMap并没有使用链表或红黑树等方式链地址来解决，而是当前地址不可用，就在当前map
+* 的数据数组中继续查找下一个可用的地址。
+*/
+```
+
+
+
+
+
+ThreadLocal 的set方法
+
+```Java
+//ThreadLocal
+public void set(T value) {
+        Thread t = Thread.currentThread();
+        ThreadLocalMap map = getMap(t);
+        if (map != null)
+            map.set(this, value);
+        else
+            createMap(t, value);
+    }
+    
+//ThreadLocalMap
+private void set(ThreadLocal<?> key, Object value) {
+
+            // We don't use a fast path as with get() because it is at
+            // least as common to use set() to create new entries as
+            // it is to replace existing ones, in which case, a fast
+            // path would fail more often than not.
+
+            Entry[] tab = table;
+            int len = tab.length;
+            int i = key.threadLocalHashCode & (len-1);
+
+            for (Entry e = tab[i];
+                 e != null;
+                 e = tab[i = nextIndex(i, len)]) {
+                ThreadLocal<?> k = e.get();
+
+                if (k == key) {
+                    e.value = value;
+                    return;
+                }
+
+                if (k == null) {
+                    replaceStaleEntry(key, value, i);
+                    return;
+                }
+            }
+
+            tab[i] = new Entry(key, value);
+            int sz = ++size;
+            if (!cleanSomeSlots(i, sz) && sz >= threshold)
+                rehash();
+        }
+```
+
+
+
+```Java
+//Thread需要保存多个本地线程变量，就要声明多个ThradLocal类变量
+/**
+* 注：可以看出，存数据的实际上是ThreadLocalMap，而Thread存有ThreadLocalMap的引用，所以虽然ThreadLocal
+* 的实例不同，但是对应的ThreadLocaLMap是一个。
+*/
+package com.jdkStudy.threadLocal;
+
+import java.lang.reflect.Method;
+
+public class ThreadLocalTest {
+    ThreadLocal<String> threadLocal = new ThreadLocal<String>();
+    ThreadLocal<String> threadLocal2 = new ThreadLocal<String>();
+    public static void main(String[] args) {
+        ThreadLocalTest threadLocalTest = new ThreadLocalTest();
+        Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                //System.out.println("t1:"+ threadLocalTest.threadLocal.get());
+                threadLocalTest.threadLocal.set("t1 local variable");
+                threadLocalTest.threadLocal2.set("t1-2 local variable");
+                System.out.println("t1:"+ threadLocalTest.threadLocal.get());
+                System.out.println("t1:"+ threadLocalTest.threadLocal2.get());
+
+                /*通过反射查看ThreadLocalMap*/
+                try {
+                    Method getMapMethod = threadLocalTest.threadLocal.getClass().getDeclaredMethod("getMap",Thread.class);
+                    getMapMethod.setAccessible(true);
+                    Object threadLocalMap = getMapMethod.invoke(threadLocalTest.threadLocal,Thread.currentThread());
+                    System.out.println("ThreadLocalMap  info:"+threadLocalMap);
+                    Method getMapMethod2 = threadLocalTest.threadLocal2.getClass().getDeclaredMethod("getMap",Thread.class);
+                    getMapMethod2.setAccessible(true);
+                    Object threadLocalMap2 = getMapMethod.invoke(threadLocalTest.threadLocal2,Thread.currentThread());
+                    System.out.println("ThreadLocalMap2 info:"+threadLocalMap2);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        t1.start();
+    }
+}
+
+//输出
+t1:t1 local variable
+t1:t1-2 local variable
+ThreadLocalMap  info:java.lang.ThreadLocal$ThreadLocalMap@638c33e6
+ThreadLocalMap2 info:java.lang.ThreadLocal$ThreadLocalMap@638c33e6
+
+
+```
+
+### ThreadLocalMap的弱引用(key回收，value无法被回收，造成内存泄漏)
+
+![ThreadLocalMap弱引用](https://github.com/Shengliannan/JDK_Learning/blob/master/img/ThreadLocalMap%E5%BC%B1%E5%BC%95%E7%94%A8.png?raw=true)
+
+ThreadLocalMap使用ThreadLocal的弱引用作为key，如果一个ThreadLocal没有外部强引用来引用它，那么系统 GC 的时候，这个ThreadLocal势必会被回收，这样一来，ThreadLocalMap中就会出现key为null的Entry，就没有办法访问这些key为null的Entry的value，如果当前线程再迟迟不结束的话，这些key为null的Entry的value就会一直存在一条强引用链：Thread Ref -> Thread -> ThreaLocalMap -> Entry -> value永远无法回收，造成内存泄漏。
+
+总的来说就是，ThreadLocal里面使用了一个存在弱引用的map, map的类型是ThreadLocal.ThreadLocalMap.Map中的key为一个threadlocal实例。这个Map的确使用了弱引用，不过弱引用只是针对key。每个key都弱引用指向threadlocal。 当把threadlocal实例置为null以后，没有任何强引用指向threadlocal实例，所以threadlocal将会被gc回收。
+
+但是，***我们的value却不能回收，而这块value永远不会被访问到了，所以存在着内存泄露***。因为存在一条从current thread连接过来的强引用。只有当前thread结束以后，current thread就不会存在栈中，强引用断开，Current Thread、Map value将全部被GC回收。最好的做法是将调用threadlocal的remove方法。
+
+
+### final
+
+final在多线程中的使用
+如果一个类变量被final修饰，那么这个变量值就不能被修改，可是实现共享读
+
+
+
+### AOP,Hibernate中使用ThreadLocal
+
+
+
+
+
+### ThreadLocal的应用场景
+
+- 在需要线程隔离的场合应用很广泛
 
